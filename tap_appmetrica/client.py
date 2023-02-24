@@ -129,7 +129,8 @@ class AppmetricaStream(RESTStream):
         params["date_since"] = next_page_token
         params["date_until"] = next_page_token
 
-        params["limit"] = 10
+        if limit := self.config.get("limit") is not None:
+            params["limit"] = limit
 
         params["fields"] = self.fields
 

@@ -31,6 +31,10 @@ class TapAppmetrica(Tap):
             th.DateTimeType,
             description="The earliest record date to sync",
         ),
+        th.Property(
+            "limit",
+            th.StringType,
+        ),
     ).to_dict()
 
     def discover_streams(self) -> list[streams.AppmetricaStream]:
