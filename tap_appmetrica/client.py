@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Generator
 import datetime
 
 import pendulum
+import pytz
 import requests
 import backoff
 from singer_sdk import metrics
@@ -27,6 +28,8 @@ SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 class AppmetricaStream(RESTStream):
     """Appmetrica stream class."""
+
+    _LOG_REQUEST_METRIC_URLS = True
 
     url_base = "https://api.appmetrica.yandex.ru"
 
@@ -75,21 +78,25 @@ class AppmetricaStream(RESTStream):
             An item for every record in the response.
         """
 
-        if starting_replication_value := self.get_starting_replication_key_value(
-            context
-        ):
-            page_date = pendulum.parse(
-                starting_replication_value
-            ).date() + datetime.timedelta(days=1)
+        now = datetime.datetime.now(tz=pytz.UTC)
+
+        if (
+            starting_replication_value := self.get_starting_replication_key_value(
+                context
+            )
+        ) is not None:
+            page_date = pendulum.parse(starting_replication_value)
         else:
-            page_date = datetime.date.today() - datetime.timedelta(days=7)
+            page_date = datetime.datetime(
+                now.year, now.month, now.day
+            ) - datetime.timedelta(days=7)
 
         decorated_request = self.request_decorator(self._request)
 
         with metrics.http_request_counter(self.name, self.path) as request_counter:
             request_counter.context = context
 
-            while page_date < datetime.date.today():
+            while page_date < now:
                 prepared_request = self.prepare_request(
                     context,
                     next_page_token=page_date,
@@ -101,7 +108,7 @@ class AppmetricaStream(RESTStream):
 
                 self.finalize_state_progress_markers()
                 self._write_state_message()
-                page_date += datetime.timedelta(days=1)
+                page_date += datetime.timedelta(days=self.config["chunk_days"])
 
     def get_url_params(
         self,
@@ -118,16 +125,16 @@ class AppmetricaStream(RESTStream):
             A dictionary of URL query parameters.
         """
         params: dict = {}
-        if not next_page_token:
-            next_page_token = self.get_starting_replication_key_value(
-                context
-            ) or datetime.date.today().strftime("%Y-%m-%d")
+
+        assert next_page_token is not None
 
         params["application_id"] = self.config["application_id"]
 
         params["date_dimension"] = "receive"
-        params["date_since"] = next_page_token
-        params["date_until"] = next_page_token
+        params["date_since"] = next_page_token.strftime("%Y-%m-%d %H:%M:%S")
+        params["date_until"] = (
+            next_page_token + datetime.timedelta(days=self.config["chunk_days"])
+        ).strftime("%Y-%m-%d %H:%M:%S")
 
         if limit := self.config.get("limit") is not None:
             params["limit"] = limit
@@ -147,7 +154,3 @@ class AppmetricaStream(RESTStream):
         """
         # TODO: Parse response body and return a set of records.
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
-
-    def post_process(self, row: dict, context: dict | None = None) -> dict | None:
-        row["event_receive_date"] = pendulum.parse(row["event_receive_datetime"]).date()
-        return row

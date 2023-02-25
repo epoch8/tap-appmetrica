@@ -14,14 +14,11 @@ class EventsStream(AppmetricaStream):
     path = "/logs/v1/export/events.json"
 
     primary_keys = None
-    replication_key = "event_receive_date"
+    replication_key = "event_receive_datetime"
 
     fields = "event_datetime,event_json,event_name,event_receive_datetime,event_receive_timestamp,event_timestamp,session_id,installation_id,appmetrica_device_id,city,connection_type,country_iso_code,device_ipv6,device_locale,device_manufacturer,device_model,device_type,google_aid,ios_ifa,ios_ifv,mcc,mnc,operator_name,original_device_model,os_name,os_version,profile_id,windows_aid,app_build_number,app_package_name,app_version_name,application_id"
 
     schema = th.PropertiesList(
-        # Synthetic property for sync purposes
-        th.Property("event_receive_date", th.DateType),
-        ###
         # Fields from Appmetrica
         th.Property("app_build_number", th.StringType),
         th.Property("app_package_name", th.StringType),

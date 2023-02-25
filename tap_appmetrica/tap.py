@@ -32,6 +32,11 @@ class TapAppmetrica(Tap):
             description="The earliest record date to sync",
         ),
         th.Property(
+            "chunk_days",
+            th.IntegerType,
+            default=30,
+        ),
+        th.Property(
             "limit",
             th.StringType,
         ),
