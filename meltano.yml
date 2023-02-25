@@ -21,7 +21,8 @@ plugins:
       kind: password
     - name: start_date
     select:
-    - '*.*'
+    # - '*.*'
+    - 'installations.*'
   loaders:
   - name: target-jsonl
     variant: andyh1203

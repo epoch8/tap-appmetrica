@@ -139,7 +139,7 @@ class AppmetricaStream(RESTStream):
         if limit := self.config.get("limit") is not None:
             params["limit"] = limit
 
-        params["fields"] = self.fields
+        params["fields"] = ",".join(self.fields)
 
         return params
 

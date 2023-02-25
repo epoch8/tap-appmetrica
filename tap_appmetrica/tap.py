@@ -50,6 +50,7 @@ class TapAppmetrica(Tap):
         """
         return [
             streams.EventsStream(self),
+            streams.InstallationsStream(self),
         ]
 
 
