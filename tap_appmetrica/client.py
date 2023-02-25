@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
+import csv
 import sys
 from pathlib import Path
 from typing import Any, Callable, Iterable, Generator
 import datetime
 
 import pendulum
-import pytz
 import requests
 import backoff
 from singer_sdk import metrics
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import SimpleAuthenticator
-from singer_sdk.pagination import BaseAPIPaginator
+from singer_sdk.helpers._util import utc_now
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -25,6 +24,9 @@ else:
 _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
+# See https://stackoverflow.com/questions/15063936/csv-error-field-larger-than-field-limit-131072
+csv.field_size_limit(sys.maxsize)
+
 
 class AppmetricaStream(RESTStream):
     """Appmetrica stream class."""
@@ -32,8 +34,6 @@ class AppmetricaStream(RESTStream):
     _LOG_REQUEST_METRIC_URLS = True
 
     url_base = "https://api.appmetrica.yandex.ru"
-
-    records_jsonpath = "$.data[*]"  # Or override `parse_response`.
 
     extra_retry_statuses = [202] + RESTStream.extra_retry_statuses
 
@@ -55,16 +55,11 @@ class AppmetricaStream(RESTStream):
         return 30
 
     @property
-    def http_headers(self) -> dict:
-        """Return the http headers needed.
-
-        Returns:
-            A dictionary of HTTP headers.
-        """
-        headers = {}
-        if "user_agent" in self.config:
-            headers["User-Agent"] = self.config.get("user_agent")
-        return headers
+    def requests_session(self) -> requests.Session:
+        if not self._requests_session:
+            self._requests_session = requests.Session()
+            self._requests_session.stream = True
+        return self._requests_session
 
     def request_records(self, context: dict | None) -> Iterable[dict]:
         """Request records from REST endpoint(s), returning response records.
@@ -78,20 +73,11 @@ class AppmetricaStream(RESTStream):
             An item for every record in the response.
         """
 
-        now = datetime.datetime.now(tz=pytz.UTC)
-
-        if (
-            starting_replication_value := self.get_starting_replication_key_value(
-                context
-            )
-        ) is not None:
-            page_date = pendulum.parse(starting_replication_value)
-        else:
-            page_date = datetime.datetime(
-                now.year, now.month, now.day
-            ) - datetime.timedelta(days=7)
+        page_date = pendulum.parse(self.get_starting_replication_key_value(context))
 
         decorated_request = self.request_decorator(self._request)
+
+        now = utc_now()
 
         with metrics.http_request_counter(self.name, self.path) as request_counter:
             request_counter.context = context
@@ -144,13 +130,5 @@ class AppmetricaStream(RESTStream):
         return params
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        """Parse the response and return an iterator of result records.
-
-        Args:
-            response: The HTTP ``requests.Response`` object.
-
-        Yields:
-            Each record from the source.
-        """
-        # TODO: Parse response body and return a set of records.
-        yield from extract_jsonpath(self.records_jsonpath, input=response.json())
+        reader = csv.DictReader((i.decode("utf-8") for i in response.iter_lines()))
+        yield from reader

@@ -11,7 +11,7 @@ from tap_appmetrica.client import AppmetricaStream
 
 class EventsStream(AppmetricaStream):
     name = "events"
-    path = "/logs/v1/export/events.json"
+    path = "/logs/v1/export/events.csv"
 
     primary_keys = None
     replication_key = "event_receive_datetime"
@@ -58,7 +58,7 @@ class EventsStream(AppmetricaStream):
 
 class InstallationsStream(AppmetricaStream):
     name = "installations"
-    path = "/logs/v1/export/installations.json"
+    path = "/logs/v1/export/installations.csv"
 
     primary_keys = None
     replication_key = "install_receive_datetime"
