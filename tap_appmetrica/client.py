@@ -130,5 +130,5 @@ class AppmetricaStream(RESTStream):
         return params
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        reader = csv.DictReader((i.decode("utf-8") for i in response.iter_lines()))
+        reader = csv.DictReader(response.iter_lines(decode_unicode=True))
         yield from reader
