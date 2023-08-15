@@ -1,13 +1,15 @@
 """Stream type classes for tap-appmetrica."""
-
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Iterable
 
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_appmetrica.client import AppmetricaStream
 
+import csv
+
+import requests
 
 class EventsStream(AppmetricaStream):
     name = "events"
@@ -108,3 +110,7 @@ class InstallationsStream(AppmetricaStream):
     schema = th.PropertiesList(
         *[th.Property(i, th.StringType) for i in fields]
     ).to_dict()
+
+    def parse_response(self, response: requests.Response) -> Iterable[dict]:
+        reader = csv.DictReader(response.iter_lines(decode_unicode=True))
+        yield from (obj for obj in reader if obj.get("install_receive_datetime"))
