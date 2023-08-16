@@ -11,6 +11,7 @@ import csv
 
 import requests
 
+
 class EventsStream(AppmetricaStream):
     name = "events"
     path = "/logs/v1/export/events.csv"
@@ -113,4 +114,9 @@ class InstallationsStream(AppmetricaStream):
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         reader = csv.DictReader(response.iter_lines(decode_unicode=True))
-        yield from (obj for obj in reader if obj.get("install_receive_datetime"))
+        yield from (
+            obj
+            for obj in reader
+            if obj.get("install_receive_datetime")
+            and obj.get("install_receive_datetime") not in ["identifier", "fingerprint"]
+        )

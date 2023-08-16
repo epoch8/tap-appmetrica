@@ -19,12 +19,12 @@ class AppmetricaAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
         """
         # TODO: Define the request body needed for the API.
         return {
-            'resource': 'https://analysis.windows.net/powerbi/api',
-            'scope': self.oauth_scopes,
-            'client_id': self.config["client_id"],
-            'username': self.config["username"],
-            'password': self.config["password"],
-            'grant_type': 'password',
+            "resource": "https://analysis.windows.net/powerbi/api",
+            "scope": self.oauth_scopes,
+            "client_id": self.config["client_id"],
+            "username": self.config["username"],
+            "password": self.config["password"],
+            "grant_type": "password",
         }
 
     @classmethod
