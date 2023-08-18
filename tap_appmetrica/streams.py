@@ -11,7 +11,18 @@ import csv
 
 import requests
 
+import pendulum
 
+from pendulum.exceptions import ParserError
+
+
+def is_valid_datetime(date_string: str):
+    try:
+        pendulum.parse(date_string)
+        return True
+    except ParserError:
+        return False
+    
 class EventsStream(AppmetricaStream):
     name = "events"
     path = "/logs/v1/export/events.csv"
@@ -58,6 +69,14 @@ class EventsStream(AppmetricaStream):
         *[th.Property(i, th.StringType) for i in fields]
     ).to_dict()
 
+    def parse_response(self, response: requests.Response) -> Iterable[dict]:
+        reader = csv.DictReader(response.iter_lines(decode_unicode=True))
+        yield from (
+            obj
+            for obj in reader
+            if obj.get("event_receive_datetime")
+            and is_valid_datetime(obj.get("event_receive_datetime"))
+        )
 
 class InstallationsStream(AppmetricaStream):
     name = "installations"
@@ -118,5 +137,5 @@ class InstallationsStream(AppmetricaStream):
             obj
             for obj in reader
             if obj.get("install_receive_datetime")
-            and obj.get("install_receive_datetime") not in ["identifier", "fingerprint"]
+            and is_valid_datetime(obj.get("install_receive_datetime"))
         )
