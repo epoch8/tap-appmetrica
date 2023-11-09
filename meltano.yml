@@ -23,7 +23,8 @@ plugins:
       select:
         # - '*.*'
         # - 'installations.*'
-        - "events.*"
+        # - "events.*"
+        - "install_devices.*"
   loaders:
     - name: target-jsonl
       variant: andyh1203

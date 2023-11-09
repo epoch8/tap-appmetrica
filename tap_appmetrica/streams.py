@@ -6,6 +6,7 @@ from typing import Iterable
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_appmetrica.client import AppmetricaStream
+from tap_appmetrica.client import AppmetricaStatStream
 
 import csv
 
@@ -23,6 +24,7 @@ def is_valid_datetime(date_string: str):
     except ParserError:
         return False
     
+
 class EventsStream(AppmetricaStream):
     name = "events"
     path = "/logs/v1/export/events.csv"
@@ -77,6 +79,7 @@ class EventsStream(AppmetricaStream):
             if obj.get("event_receive_datetime")
             and is_valid_datetime(obj.get("event_receive_datetime"))
         )
+
 
 class InstallationsStream(AppmetricaStream):
     name = "installations"
@@ -139,3 +142,41 @@ class InstallationsStream(AppmetricaStream):
             if obj.get("install_receive_datetime")
             and is_valid_datetime(obj.get("install_receive_datetime"))
         )
+
+
+class installDevicesStream(AppmetricaStatStream):
+    name = "install_devices"
+    path = ""
+
+    primary_keys = "date"
+    replication_key = "date"
+
+    schema = th.PropertiesList(
+        th.Property("date", th.DateType),
+        th.Property("installDevices", th.NumberType)
+    ).to_dict()
+
+    @property
+    def get_metrics(self) -> str:
+        return 'ym:i:installDevices'
+
+    def post_process(
+        self,
+        row: dict,
+        context: dict | None = None,
+    ) -> dict | None:
+        """As needed, append or transform raw data to match expected structure.
+
+        Args:
+            row: An individual record from the stream.
+            context: The stream context.
+
+        Returns:
+            The updated record dictionary, or ``None`` to skip the record.
+        """
+        # TODO: Delete this method if not needed.
+        row: dict = {
+            "date": row["dimensions"][0]["name"],
+            "installDevices": row["metrics"][0]
+        }
+        return row
