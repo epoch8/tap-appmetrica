@@ -53,7 +53,7 @@ class AppmetricaStream(RESTStream):
         return backoff.constant(120)
 
     def backoff_max_tries(self) -> int:
-        return 30
+        return 50
 
     @property
     def requests_session(self) -> requests.Session:
