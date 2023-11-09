@@ -148,7 +148,7 @@ class installDevicesStream(AppmetricaStatStream):
     name = "install_devices"
     path = ""
 
-    primary_keys = "date"
+    primary_keys = ["date"]
     replication_key = "date"
 
     schema = th.PropertiesList(
