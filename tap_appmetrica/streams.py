@@ -153,7 +153,7 @@ class installDevicesStream(AppmetricaStatStream):
 
     schema = th.PropertiesList(
         th.Property("date", th.DateType),
-        th.Property("installDevices", th.NumberType)
+        th.Property("install_devices", th.NumberType)
     ).to_dict()
 
     @property
@@ -177,6 +177,6 @@ class installDevicesStream(AppmetricaStatStream):
         # TODO: Delete this method if not needed.
         row: dict = {
             "date": row["dimensions"][0]["name"],
-            "installDevices": row["metrics"][0]
+            "install_devices": row["metrics"][0]
         }
         return row
