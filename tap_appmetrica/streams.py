@@ -72,6 +72,7 @@ class EventsStream(AppmetricaStream):
     ).to_dict()
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
+        response.encoding = 'utf-8'
         reader = csv.DictReader(response.iter_lines(decode_unicode=True))
         yield from (
             obj
@@ -135,6 +136,7 @@ class InstallationsStream(AppmetricaStream):
     ).to_dict()
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
+        response.encoding = 'utf-8'
         reader = csv.DictReader(response.iter_lines(decode_unicode=True))
         yield from (
             obj
