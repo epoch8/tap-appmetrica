@@ -20,6 +20,7 @@ plugins:
         - name: token
           kind: password
         - name: start_date
+        - name: retro_interval_days
       select:
         # - '*.*'
         # - 'installations.*'

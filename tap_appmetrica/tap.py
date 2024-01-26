@@ -41,6 +41,11 @@ class TapAppmetrica(Tap):
             "limit",
             th.StringType,
         ),
+        th.Property(
+            "retro_interval_days",
+            th.IntegerType,
+            default=0
+        )
     ).to_dict()
 
     def discover_streams(self) -> list[streams.AppmetricaStream]:
