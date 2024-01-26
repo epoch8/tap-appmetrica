@@ -124,7 +124,7 @@ class AppmetricaStream(RESTStream):
             next_page_token + datetime.timedelta(days=self.config["chunk_days"])
         ).strftime("%Y-%m-%d %H:%M:%S")
 
-        if limit := self.config.get("limit") is not None:
+        if (limit := self.config.get("limit")) is not None:
             params["limit"] = limit
 
         params["fields"] = ",".join(self.fields)
