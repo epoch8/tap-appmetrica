@@ -75,7 +75,10 @@ class AppmetricaStream(RESTStream):
         """
 
         page_date = pendulum.parse(self.get_starting_replication_key_value(context))
-        page_date = page_date.subtract(days=self.config.get("retro_interval_days"))
+
+        if (retro_interval_days := self.config.get("retro_interval_days")) != 0:
+            page_date = page_date.subtract(days=retro_interval_days)
+            page_date = page_date.set(hour=0, minute=0, second=0, microsecond=0)
         
         decorated_request = self.request_decorator(self._request)
 
