@@ -172,14 +172,25 @@ class AppmetricaStatStream(RESTStream):
         Returns:
             A dictionary of URL query parameters.
         """
+
+        if (replication_key_value := self.get_starting_replication_key_value(context=context)) is not None:
+            replication_key_value = pendulum.parse(replication_key_value.split()[0])
+
+            if (retro_interval_days := self.config.get("retro_interval_days")) != 0:
+                replication_key_value = replication_key_value.subtract(days=retro_interval_days)
+
+            start_date = self.compare_start_date(
+                value=replication_key_value.strftime("%Y-%m-%d"),
+                start_date_value=self.config['start_date'].split()[0]
+            )
+        else:
+            start_date = self.config['start_date'].split()[0]
+
         params: dict = {
             'id': self.config['application_id'],
             'metrics': self.get_metrics,
             'dimensions': 'ym:i:date',
-            'date1': self.compare_start_date(
-                value=self.get_starting_replication_key_value(context=context).split()[0],
-                start_date_value=self.config['start_date'].split()[0]
-            ),
+            'date1': start_date,
             'group': 'day'
         }
         return params
