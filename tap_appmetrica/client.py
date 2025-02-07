@@ -53,7 +53,7 @@ class AppmetricaStream(RESTStream):
         return backoff.constant(120)
 
     def backoff_max_tries(self) -> int:
-        return 50
+        return 100
 
     @property
     def requests_session(self) -> requests.Session:
@@ -79,7 +79,7 @@ class AppmetricaStream(RESTStream):
         if (retro_interval_days := self.config.get("retro_interval_days")) != 0:
             page_date = page_date.subtract(days=retro_interval_days)
             page_date = page_date.set(hour=0, minute=0, second=0, microsecond=0)
-        
+
         decorated_request = self.request_decorator(self._request)
 
         now = utc_now()
@@ -153,10 +153,10 @@ class AppmetricaStatStream(RESTStream):
         return SimpleAuthenticator(
             self, {"Authorization": f"OAuth {self.config['token']}"}
         )
-    
+
     @property
     def get_metrics(self) -> str:
-        return ''
+        return ""
 
     def get_url_params(
         self,
@@ -173,25 +173,31 @@ class AppmetricaStatStream(RESTStream):
             A dictionary of URL query parameters.
         """
 
-        if (replication_key_value := self.get_starting_replication_key_value(context=context)) is not None:
+        if (
+            replication_key_value := self.get_starting_replication_key_value(
+                context=context
+            )
+        ) is not None:
             replication_key_value = pendulum.parse(replication_key_value.split()[0])
 
             if (retro_interval_days := self.config.get("retro_interval_days")) != 0:
-                replication_key_value = replication_key_value.subtract(days=retro_interval_days)
+                replication_key_value = replication_key_value.subtract(
+                    days=retro_interval_days
+                )
 
             start_date = self.compare_start_date(
                 value=replication_key_value.strftime("%Y-%m-%d"),
-                start_date_value=self.config['start_date'].split()[0]
+                start_date_value=self.config["start_date"].split()[0],
             )
         else:
-            start_date = self.config['start_date'].split()[0]
+            start_date = self.config["start_date"].split()[0]
 
         params: dict = {
-            'id': self.config['application_id'],
-            'metrics': self.get_metrics,
-            'dimensions': 'ym:i:date',
-            'date1': start_date,
-            'group': 'day'
+            "id": self.config["application_id"],
+            "metrics": self.get_metrics,
+            "dimensions": "ym:i:date",
+            "date1": start_date,
+            "group": "day",
         }
         return params
 
